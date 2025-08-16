@@ -11,8 +11,12 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production && npm cache clean --force
+# Limpiar cache de npm y generar package-lock.json
+RUN npm cache clean --force
+RUN rm -rf node_modules package-lock.json
+
+# Instalar dependencias y generar nuevo lock file
+RUN npm install --only=production && npm cache clean --force
 
 # Copiar el resto de la aplicación
 COPY . .

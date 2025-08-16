@@ -22,6 +22,13 @@ const TransactionsTab = () => {
     transactionType: 'expense',
     transactionDate: getCurrentDate(),
     frequency: 'one-time',
+    recurrenceType: 'simple',
+    frequencyType: 'daily',
+    frequencyInterval: 1,
+    skipWeekends: false,
+    skipHolidays: false,
+    useCustomLogic: false,
+    customLogic: '',
     notes: '',
   });
 
@@ -56,14 +63,45 @@ const TransactionsTab = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingTransaction) {
-        const response = await transactionsAPI.update(editingTransaction.id, formData);
-        setTransactions(prev => prev.map(t => 
-          t.id === editingTransaction.id ? response.data : t
-        ));
+      if (formData.frequency !== 'one-time') {
+        // Crear serie recurrente
+        const recurringData = {
+          ...formData,
+          recurrenceType: formData.frequency === 'custom' ? 'custom' : 'simple',
+          frequencyType: formData.frequency === 'custom' ? formData.frequencyType : formData.frequency,
+          startDate: formData.transactionDate,
+        };
+        
+        const response = await fetch('http://localhost:5000/api/recurring/series', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(recurringData),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Serie recurrente creada:', result);
+          
+          // Generar primera transacción
+          await fetch('http://localhost:5000/api/recurring/series/generate', {
+            method: 'POST',
+          });
+          
+          fetchTransactions(); // Recargar transacciones
+        }
       } else {
-        const response = await transactionsAPI.create(formData);
-        setTransactions(prev => [response.data, ...prev]);
+        // Transacción única normal
+        if (editingTransaction) {
+          const response = await transactionsAPI.update(editingTransaction.id, formData);
+          setTransactions(prev => prev.map(t => 
+            t.id === editingTransaction.id ? response.data : t
+          ));
+        } else {
+          const response = await transactionsAPI.create(formData);
+          setTransactions(prev => [response.data, ...prev]);
+        }
       }
       
       resetForm();
@@ -109,6 +147,13 @@ const TransactionsTab = () => {
       transactionType: 'expense',
       transactionDate: getCurrentDate(),
       frequency: 'one-time',
+      recurrenceType: 'simple',
+      frequencyType: 'daily',
+      frequencyInterval: 1,
+      skipWeekends: false,
+      skipHolidays: false,
+      useCustomLogic: false,
+      customLogic: '',
       notes: '',
     });
     setEditingTransaction(null);
@@ -292,17 +337,142 @@ const TransactionsTab = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Frecuencia
                 </label>
-                <select
-                  value={formData.frequency}
-                  onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="one-time">Una vez</option>
-                  <option value="daily">Diario</option>
-                  <option value="weekly">Semanal</option>
-                  <option value="monthly">Mensual</option>
-                  <option value="yearly">Anual</option>
-                </select>
+                <div className="space-y-3">
+                  <select
+                    value={formData.frequency}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      frequency: e.target.value,
+                      recurrenceType: e.target.value === 'custom' ? 'custom' : 'simple'
+                    }))}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="one-time">Una vez</option>
+                    <option value="daily">Diario</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensual</option>
+                    <option value="yearly">Anual</option>
+                    <option value="custom">Personalizada</option>
+                  </select>
+                  
+                  {/* Configuración personalizada */}
+                  {formData.frequency === 'custom' && (
+                    <div className="bg-blue-50 p-3 rounded-md space-y-3">
+                      <div className="flex space-x-2">
+                        <div className="flex-1">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Cada
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={formData.frequencyInterval || 1}
+                            onChange={(e) => setFormData(prev => ({ 
+                              ...prev, 
+                              frequencyInterval: parseInt(e.target.value) || 1 
+                            }))}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                        <div className="flex-2">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Período
+                          </label>
+                          <select
+                            value={formData.frequencyType || 'days'}
+                            onChange={(e) => setFormData(prev => ({ 
+                              ...prev, 
+                              frequencyType: e.target.value 
+                            }))}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          >
+                            <option value="daily">Día(s)</option>
+                            <option value="weekly">Semana(s)</option>
+                            <option value="monthly">Mes(es)</option>
+                            <option value="yearly">Año(s)</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      {/* Opciones de días laborables */}
+                      <div className="space-y-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.skipWeekends || false}
+                            onChange={(e) => setFormData(prev => ({ 
+                              ...prev, 
+                              skipWeekends: e.target.checked 
+                            }))}
+                            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                          />
+                          <span className="ml-2 text-xs text-gray-600">
+                            Evitar fines de semana
+                          </span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.skipHolidays || false}
+                            onChange={(e) => setFormData(prev => ({ 
+                              ...prev, 
+                              skipHolidays: e.target.checked 
+                            }))}
+                            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                          />
+                          <span className="ml-2 text-xs text-gray-600">
+                            Evitar días festivos
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Lógica personalizada */}
+                  {formData.frequency !== 'one-time' && (
+                    <div className="mt-3">
+                      <label className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.useCustomLogic || false}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            useCustomLogic: e.target.checked 
+                          }))}
+                          className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Usar lógica personalizada
+                        </span>
+                      </label>
+                      
+                      {formData.useCustomLogic && (
+                        <div className="bg-yellow-50 p-3 rounded-md">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Código JavaScript (return nueva fecha)
+                          </label>
+                          <textarea
+                            value={formData.customLogic || ''}
+                            onChange={(e) => setFormData(prev => ({ 
+                              ...prev, 
+                              customLogic: e.target.value 
+                            }))}
+                            placeholder="// Ejemplo: ajustar pago de salario
+// if (date.getDay() === 6) return new Date(date.getTime() - 24*60*60*1000);
+// if (date.getDay() === 0) return new Date(date.getTime() - 2*24*60*60*1000);
+// return date;"
+                            rows={4}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-xs font-mono"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Variables disponibles: date (Date object), skipWeekends, skipHolidays
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Notas */}

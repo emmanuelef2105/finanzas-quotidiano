@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+// const rateLimit = require('express-rate-limit'); // Deshabilitado para desarrollo
 require('dotenv').config();
 
 const app = express();
@@ -27,12 +27,26 @@ app.use(cors({
     credentials: true
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100 // límite de 100 requests por IP por ventana de tiempo
-});
-app.use(limiter);
+// Rate limiting - DESHABILITADO para desarrollo
+// const limiter = rateLimit({
+//     windowMs: 1 * 60 * 1000, // 1 minuto en desarrollo
+//     max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 1000 requests en desarrollo, 100 en producción
+//     message: {
+//         error: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.',
+//         retryAfter: '1 minuto'
+//     },
+//     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+// });
+
+// Solo aplicar rate limiting si no estamos en modo desarrollo
+// if (process.env.NODE_ENV === 'production') {
+//     app.use(limiter);
+// } else {
+//     console.log('🚧 Rate limiting deshabilitado en modo desarrollo');
+// }
+
+console.log('🚧 Rate limiting completamente deshabilitado para desarrollo');
 
 // Middleware para parsing JSON
 app.use(express.json({ limit: '10mb' }));
@@ -44,6 +58,7 @@ const transactionRoutes = require('./routes/transactions');
 const debtRoutes = require('./routes/debts');
 const investmentRoutes = require('./routes/investments');
 const dashboardRoutes = require('./routes/dashboard');
+const recurringRoutes = require('./routes/recurring');
 
 // Usar rutas
 app.use('/api/accounts', accountRoutes);
@@ -51,6 +66,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/debts', debtRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/recurring', recurringRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {
@@ -81,4 +97,11 @@ app.listen(PORT, async () => {
     
     // Verificar conexión a base de datos
     await testDatabaseConnection();
+    
+    // TODO: Iniciar el programador de transacciones recurrentes después de instalar node-cron
+    // const scheduler = require('./scheduler');
+    // scheduler.startRecurringJobScheduler();
+    // scheduler.startCleanupScheduler();
+    
+    console.log('✅ Servidor completamente iniciado');
 });

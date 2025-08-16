@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrador de Finanzas Personales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">Panel de Finanzas</h1>
+            <p class="text-gray-600">Tu centro de control financiero personal.</p>
+        </header>
+
+        <!-- Panel General -->
+        <section id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Capital Actual</p>
+                    <p id="current-capital" class="text-3xl font-bold text-green-600">$0.00</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M9.401 16c-.519-.598-.92-1.452-.92-2.4 0-.948.401-1.802.92-2.4m5.198 4.8c.519-.598.92-1.452.92-2.4 0-.948-.401-1.802-.92-2.4M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" /></svg>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Ingresos (Mensual)</p>
+                    <p id="monthly-income" class="text-3xl font-bold text-blue-600">$0.00</p>
+                </div>
+                 <div class="bg-blue-100 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Gastos (Mensual)</p>
+                    <p id="monthly-expenses" class="text-3xl font-bold text-red-600">$0.00</p>
+                </div>
+                 <div class="bg-red-100 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Deudas por Cobrar</p>
+                    <p id="debts-to-collect" class="text-3xl font-bold text-yellow-600">$0.00</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 015.658 0M12 6V3m0 3c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z" /></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pestañas de Navegación -->
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="flex space-x-8 -mb-px" id="tabs">
+                <button data-tab="transactions" class="py-4 px-1 border-b-2 font-medium text-sm tab-active">Transacciones</button>
+                <button data-tab="debts" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm">Deudas y Préstamos</button>
+                <button data-tab="investments" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm">Inversiones</button>
+                <button data-tab="accounts" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm">Cuentas</button>
+            </nav>
+        </div>
+
+        <!-- Contenido de las Pestañas -->
+        <main id="tab-content">
+            <!-- Pestaña de Transacciones -->
+            <div id="transactions-content" class="tab-pane active">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Formulario de Registro -->
+                    <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Nuevo Registro</h2>
+                        <form id="transaction-form" class="space-y-4">
+                            <input type="hidden" id="transaction-id">
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700">Descripción</label>
+                                <input type="text" id="description" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                            </div>
+                            <div>
+                                <label for="amount" class="block text-sm font-medium text-gray-700">Monto</label>
+                                <input type="number" id="amount" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                            </div>
+                            <div>
+                                <label for="date" class="block text-sm font-medium text-gray-700">Fecha</label>
+                                <input type="date" id="date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                            </div>
+                            <div>
+                                <label for="type" class="block text-sm font-medium text-gray-700">Tipo</label>
+                                <select id="type" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="income">Ingreso</option>
+                                    <option value="expense">Gasto</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="account" class="block text-sm font-medium text-gray-700">Cuenta / Banco</label>
+                                <select id="account" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></select>
+                            </div>
+                             <div>
+                                <label for="frequency" class="block text-sm font-medium text-gray-700">Frecuencia</label>
+                                <select id="frequency" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="once">Una vez</option>
+                                    <option value="daily">Diariamente</option>
+                                    <option value="weekly">Semanalmente</option>
+                                    <option value="biweekly">Quincenalmente</option>
+                                    <option value="monthly">Mensualmente</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Guardar Registro</button>
+                        </form>
+                    </div>
+                    <!-- Lista de Transacciones -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Historial de Transacciones</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cuenta</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transaction-list" class="bg-white divide-y divide-gray-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña de Deudas -->
+            <div id="debts-content" class="tab-pane hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Deudas por cobrar -->
+                     <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Me Deben</h2>
+                        <form id="debtor-form" class="space-y-4 mb-6">
+                            <div>
+                                <label for="debtor-name" class="block text-sm font-medium text-gray-700">Nombre del Deudor</label>
+                                <input type="text" id="debtor-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required placeholder="Ej: Tomás">
+                            </div>
+                            <button type="submit" class="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600">Añadir Deudor</button>
+                        </form>
+                        <div id="debtors-list" class="space-y-4"></div>
+                    </div>
+                    <!-- Mis Deudas -->
+                     <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Mis Deudas (Lo que debo)</h2>
+                         <form id="my-debt-form" class="space-y-4 mb-6">
+                            <input type="hidden" id="my-debt-id">
+                            <div>
+                                <label for="creditor-name" class="block text-sm font-medium text-gray-700">Acreedor (Ej: Banco, Amigo)</label>
+                                <input type="text" id="creditor-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="my-debt-amount" class="block text-sm font-medium text-gray-700">Monto Total</label>
+                                <input type="number" id="my-debt-amount" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="monthly-payment" class="block text-sm font-medium text-gray-700">Cuota Mensual (Gasto)</label>
+                                <input type="number" id="monthly-payment" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Opcional">
+                            </div>
+                            <button type="submit" class="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Añadir Mi Deuda</button>
+                        </form>
+                        <div id="my-debts-list"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pestaña de Inversiones -->
+            <div id="investments-content" class="tab-pane hidden">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Nueva Inversión</h2>
+                        <form id="investment-form" class="space-y-4">
+                            <input type="hidden" id="investment-id">
+                            <div>
+                                <label for="investment-name" class="block text-sm font-medium text-gray-700">Nombre (Ej: CDT Bancamia)</label>
+                                <input type="text" id="investment-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="investment-amount" class="block text-sm font-medium text-gray-700">Monto Invertido</label>
+                                <input type="number" id="investment-amount" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="investment-yield" class="block text-sm font-medium text-gray-700">Rentabilidad (% EA)</label>
+                                <input type="number" id="investment-yield" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Ej: 9">
+                            </div>
+                            <div>
+                                <label for="investment-account" class="block text-sm font-medium text-gray-700">Cuenta Asociada</label>
+                                <select id="investment-account" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></select>
+                            </div>
+                            <button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700">Guardar Inversión</button>
+                        </form>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Mis Inversiones</h2>
+                        <div id="investment-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña de Cuentas -->
+            <div id="accounts-content" class="tab-pane hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Nueva Cuenta</h2>
+                        <form id="account-form" class="space-y-4">
+                            <input type="hidden" id="account-id">
+                            <div>
+                                <label for="account-name" class="block text-sm font-medium text-gray-700">Nombre de la Cuenta (Ej: Bancolombia)</label>
+                                <input type="text" id="account-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="initial-balance" class="block text-sm font-medium text-gray-700">Saldo Inicial</label>
+                                <input type="number" id="initial-balance" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">Guardar Cuenta</button>
+                        </form>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">Mis Cuentas</h2>
+                        <div id="account-list"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para seleccionar cuenta al pagar deuda -->
+    <div id="account-selection-modal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-auto relative z-10 mt-20">
+            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Seleccionar Cuenta</h3>
+            <p class="text-sm text-gray-500 mb-4">¿A qué cuenta ingresó el dinero del pago de esta deuda?</p>
+            <select id="modal-account-select" class="w-full border-gray-300 rounded-md shadow-sm"></select>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="modal-cancel-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+                <button id="modal-confirm-btn" type="button" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Estado de la aplicación
+            let state = {
+                transactions: [],
+                accounts: [],
+                debtsToCollect: [], // Estructura cambiada
+                myDebts: [],
+                investments: []
+            };
+
+            // Selectores del DOM
+            const transactionForm = document.getElementById('transaction-form');
+            const transactionList = document.getElementById('transaction-list');
+            const accountForm = document.getElementById('account-form');
+            const accountList = document.getElementById('account-list');
+            const debtorForm = document.getElementById('debtor-form');
+            const debtorsList = document.getElementById('debtors-list');
+            const myDebtForm = document.getElementById('my-debt-form');
+            const myDebtsList = document.getElementById('my-debts-list');
+            const investmentForm = document.getElementById('investment-form');
+            const investmentList = document.getElementById('investment-list');
+            const tabs = document.getElementById('tabs');
+            const tabContent = document.getElementById('tab-content');
+            const accountSelectionModal = document.getElementById('account-selection-modal');
+
+
+            // --- Cargar datos de localStorage ---
+            function loadState() {
+                const savedState = JSON.parse(localStorage.getItem('financeAppState'));
+                if (savedState) {
+                    // Asegurar que la nueva estructura de datos exista
+                    savedState.debtsToCollect = savedState.debtsToCollect || [];
+                    state = savedState;
+                }
+            }
+
+            // --- Guardar datos en localStorage ---
+            function saveState() {
+                localStorage.setItem('financeAppState', JSON.stringify(state));
+            }
+
+            // --- Funciones de formato ---
+            const formatCurrency = (amount) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(amount);
+            const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-CO', { timeZone: 'UTC' });
+
+            // --- Lógica de Pestañas (sin cambios) ---
+            tabs.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const tabName = e.target.dataset.tab;
+                    tabs.querySelectorAll('button').forEach(btn => btn.classList.remove('tab-active'));
+                    e.target.classList.add('tab-active');
+                    tabContent.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
+                    document.getElementById(`${tabName}-content`).classList.remove('hidden');
+                }
+            });
+
+            // --- Lógica de Cuentas (sin cambios) ---
+            function renderAccounts() {
+                accountList.innerHTML = state.accounts.map(acc => `
+                    <div class="flex justify-between items-center p-4 border-b">
+                        <div>
+                            <p class="font-semibold">${acc.name}</p>
+                            <p class="text-sm text-gray-600">Saldo: ${formatCurrency(calculateAccountBalance(acc.id))}</p>
+                        </div>
+                        <div>
+                            <button data-id="${acc.id}" class="delete-account text-red-500 hover:text-red-700">Eliminar</button>
+                        </div>
+                    </div>
+                `).join('');
+                updateAccountDropdowns();
+            }
+            function updateAccountDropdowns() {
+                const accountSelects = document.querySelectorAll('#account, #investment-account, #modal-account-select');
+                accountSelects.forEach(select => {
+                    select.innerHTML = state.accounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('');
+                });
+            }
+            accountForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                state.accounts.push({ id: Date.now().toString(), name: document.getElementById('account-name').value, initialBalance: parseFloat(document.getElementById('initial-balance').value) });
+                saveAndRender();
+                accountForm.reset();
+            });
+            accountList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-account')) {
+                    state.accounts = state.accounts.filter(acc => acc.id !== e.target.dataset.id);
+                    state.transactions = state.transactions.filter(t => t.accountId !== e.target.dataset.id);
+                    saveAndRender();
+                }
+            });
+
+            // --- Lógica de Transacciones (sin cambios) ---
+            function renderTransactions() {
+                transactionList.innerHTML = state.transactions
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .map(t => {
+                    const account = state.accounts.find(a => a.id === t.accountId);
+                    const amountClass = t.type === 'income' ? 'text-green-600' : 'text-red-600';
+                    return `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">${t.description}</div></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="${amountClass} font-semibold">${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(t.date)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${account ? account.name : 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button data-id="${t.id}" class="delete-transaction text-red-500 hover:text-red-700">Eliminar</button></td>
+                        </tr>`;
+                }).join('');
+            }
+            transactionForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                state.transactions.push({
+                    id: Date.now().toString(),
+                    description: document.getElementById('description').value,
+                    amount: parseFloat(document.getElementById('amount').value),
+                    date: document.getElementById('date').value,
+                    type: document.getElementById('type').value,
+                    accountId: document.getElementById('account').value,
+                    frequency: document.getElementById('frequency').value,
+                });
+                saveAndRender();
+                transactionForm.reset();
+            });
+            transactionList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-transaction')) {
+                    state.transactions = state.transactions.filter(t => t.id !== e.target.dataset.id);
+                    saveAndRender();
+                }
+            });
+            
+            // --- Lógica de Deudas (ACTUALIZADA) ---
+            const calculateDebtBalance = (debtor) => {
+                const totalItems = debtor.items.reduce((sum, item) => sum + item.value, 0);
+                const totalPayments = debtor.payments.reduce((sum, payment) => sum + payment.amount, 0);
+                return totalItems - totalPayments;
+            };
+
+            function renderDebts() {
+                // Deudas por cobrar (Me Deben) - Lógica completamente nueva
+                debtorsList.innerHTML = state.debtsToCollect.map(debtor => {
+                    const balance = calculateDebtBalance(debtor);
+                    return `
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200" id="debt-card-${debtor.id}">
+                        <div class="flex justify-between items-center cursor-pointer" data-action="toggle-debtor" data-id="${debtor.id}">
+                            <h4 class="font-bold text-lg">${debtor.name}</h4>
+                            <div class="text-right">
+                                <p class="font-semibold ${balance > 0 ? 'text-yellow-600' : 'text-green-600'}">${formatCurrency(balance)}</p>
+                                <p class="text-xs text-gray-500">Saldo pendiente</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-200 hidden space-y-4" data-details-id="${debtor.id}">
+                            <!-- Detalles, pagos y formularios -->
+                            <div>
+                                <h5 class="font-semibold mb-2">Artículos</h5>
+                                <div class="space-y-2 text-sm">
+                                    ${debtor.items.map(item => `
+                                        <div class="flex justify-between items-center">
+                                            <span>${item.detail} (${formatDate(item.date)})</span>
+                                            <span class="font-medium">${formatCurrency(item.value)}</span>
+                                        </div>
+                                    `).join('') || '<p class="text-xs text-gray-500">No hay artículos.</p>'}
+                                </div>
+                                <form class="mt-2 flex gap-2" data-action="add-item" data-id="${debtor.id}">
+                                    <input type="text" placeholder="Detalle (Ej: Limonada)" class="flex-grow border-gray-300 rounded-md shadow-sm text-sm" required name="detail">
+                                    <input type="number" placeholder="Valor" class="w-24 border-gray-300 rounded-md shadow-sm text-sm" required name="value" step="0.01">
+                                    <input type="date" class="border-gray-300 rounded-md shadow-sm text-sm" required name="date" value="${new Date().toISOString().split('T')[0]}">
+                                    <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">+</button>
+                                </form>
+                            </div>
+                             <div>
+                                <h5 class="font-semibold mb-2">Pagos</h5>
+                                <div class="space-y-2 text-sm">
+                                    ${debtor.payments.map(p => `
+                                        <div class="flex justify-between items-center">
+                                            <span>Pago recibido (${formatDate(p.date)})</span>
+                                            <span class="font-medium text-green-600">-${formatCurrency(p.amount)}</span>
+                                        </div>
+                                    `).join('') || '<p class="text-xs text-gray-500">No hay pagos.</p>'}
+                                </div>
+                                <form class="mt-2 flex gap-2" data-action="add-payment" data-id="${debtor.id}">
+                                    <input type="number" placeholder="Monto del pago" class="flex-grow border-gray-300 rounded-md shadow-sm text-sm" required name="amount" step="0.01">
+                                     <input type="date" class="border-gray-300 rounded-md shadow-sm text-sm" required name="date" value="${new Date().toISOString().split('T')[0]}">
+                                    <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Abonar</button>
+                                </form>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-4">
+                                <button data-action="export-debt" data-id="${debtor.id}" class="text-sm bg-gray-600 text-white py-1 px-3 rounded-md hover:bg-gray-700">Exportar PNG</button>
+                                <button data-action="mark-as-paid" data-id="${debtor.id}" class="text-sm bg-green-600 text-white py-1 px-3 rounded-md hover:bg-green-700" ${balance <= 0 ? 'disabled' : ''}>Saldar Deuda</button>
+                                <button data-action="delete-debtor" data-id="${debtor.id}" class="text-sm bg-red-600 text-white py-1 px-3 rounded-md hover:bg-red-700">Eliminar</button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                // Mis deudas (sin cambios en la lógica)
+                myDebtsList.innerHTML = state.myDebts.map(d => `
+                     <div class="flex justify-between items-center p-3 border-b bg-red-50 rounded-lg mb-2">
+                        <div>
+                            <p class="font-semibold">${d.name}</p>
+                            <p class="text-sm text-red-800">${formatCurrency(d.amount)}</p>
+                            ${d.payment ? `<p class="text-xs text-gray-500">Cuota: ${formatCurrency(d.payment)}</p>` : ''}
+                        </div>
+                        <button data-id="${d.id}" class="delete-my-debt text-gray-500 hover:text-gray-700 text-xs">PAGADO</button>
+                    </div>
+                `).join('');
+            }
+
+            debtorForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const name = document.getElementById('debtor-name').value;
+                if (name && !state.debtsToCollect.some(d => d.name === name)) {
+                    state.debtsToCollect.push({
+                        id: Date.now().toString(),
+                        name,
+                        items: [],
+                        payments: []
+                    });
+                    saveAndRender();
+                    debtorForm.reset();
+                } else {
+                    alert("El deudor ya existe o el nombre está vacío.");
+                }
+            });
+
+            debtorsList.addEventListener('click', e => {
+                const target = e.target;
+                const actionElement = target.closest('[data-action]');
+                if (!actionElement) return;
+
+                const action = actionElement.dataset.action;
+                const debtorId = actionElement.dataset.id;
+                const debtor = state.debtsToCollect.find(d => d.id === debtorId);
+
+                if (action === 'toggle-debtor') {
+                    const details = document.querySelector(`[data-details-id="${debtorId}"]`);
+                    details.classList.toggle('hidden');
+                }
+
+                if (action === 'add-item' || action === 'add-payment') {
+                    e.preventDefault();
+                    const form = actionElement;
+                    if (action === 'add-item') {
+                        const newItem = {
+                            id: Date.now().toString(),
+                            detail: form.elements.detail.value,
+                            value: parseFloat(form.elements.value.value),
+                            date: form.elements.date.value
+                        };
+                        debtor.items.push(newItem);
+                    } else if (action === 'add-payment') {
+                        const newPayment = {
+                            id: Date.now().toString(),
+                            amount: parseFloat(form.elements.amount.value),
+                            date: form.elements.date.value
+                        };
+                        debtor.payments.push(newPayment);
+                    }
+                    saveAndRender();
+                    const details = document.querySelector(`[data-details-id="${debtorId}"]`);
+                    if (details) details.classList.remove('hidden'); // Mantener abierto
+                }
+                
+                if (action === 'delete-debtor') {
+                    state.debtsToCollect = state.debtsToCollect.filter(d => d.id !== debtorId);
+                    saveAndRender();
+                }
+
+                if (action === 'mark-as-paid') {
+                    const balance = calculateDebtBalance(debtor);
+                    if (state.accounts.length === 0) {
+                        alert("Por favor, crea al menos una cuenta para registrar el ingreso.");
+                        return;
+                    }
+                    if (balance > 0) {
+                        accountSelectionModal.classList.remove('hidden');
+                        accountSelectionModal.classList.add('flex');
+                        
+                        const confirmBtn = document.getElementById('modal-confirm-btn');
+                        const cancelBtn = document.getElementById('modal-cancel-btn');
+                        
+                        const confirmHandler = () => {
+                            const selectedAccountId = document.getElementById('modal-account-select').value;
+                            state.transactions.push({
+                                id: Date.now().toString(),
+                                description: `Pago completo de deuda: ${debtor.name}`,
+                                amount: balance,
+                                date: new Date().toISOString().split('T')[0],
+                                type: 'income',
+                                accountId: selectedAccountId,
+                                frequency: 'once',
+                            });
+                            state.debtsToCollect = state.debtsToCollect.filter(d => d.id !== debtorId);
+                            closeModal();
+                            saveAndRender();
+                        };
+
+                        const closeModal = () => {
+                            accountSelectionModal.classList.add('hidden');
+                            accountSelectionModal.classList.remove('flex');
+                            confirmBtn.replaceWith(confirmBtn.cloneNode(true)); // Eliminar event listener
+                        };
+                        
+                        confirmBtn.onclick = confirmHandler;
+                        cancelBtn.onclick = closeModal;
+                        accountSelectionModal.querySelector('.modal-backdrop').onclick = closeModal;
+                    }
+                }
+
+                if (action === 'export-debt') {
+                    exportDebtAsPNG(debtor);
+                }
+            });
+
+            function exportDebtAsPNG(debtor) {
+                const balance = calculateDebtBalance(debtor);
+                const totalItems = debtor.items.reduce((sum, item) => sum + item.value, 0);
+                const totalPayments = debtor.payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+                // Crear un elemento temporal para la exportación
+                const exportContainer = document.createElement('div');
+                exportContainer.id = 'export-node';
+                exportContainer.className = 'p-6 bg-white w-[400px]';
+                exportContainer.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-2">Estado de Cuenta</h2>
+                    <p class="text-lg font-semibold mb-4">${debtor.name}</p>
+                    <hr class="my-4">
+                    <h3 class="font-semibold mb-2">Artículos</h3>
+                    <table class="w-full text-sm mb-4">
+                        ${debtor.items.map(item => `
+                            <tr>
+                                <td>${item.detail} (${formatDate(item.date)})</td>
+                                <td class="text-right">${formatCurrency(item.value)}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                    <hr class="my-2">
+                    <div class="text-right font-bold">Total Artículos: ${formatCurrency(totalItems)}</div>
+                    
+                    <h3 class="font-semibold mb-2 mt-4">Pagos Realizados</h3>
+                    <table class="w-full text-sm mb-4">
+                         ${debtor.payments.map(p => `
+                            <tr>
+                                <td>Pago (${formatDate(p.date)})</td>
+                                <td class="text-right text-green-600">-${formatCurrency(p.amount)}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                     <hr class="my-2">
+                    <div class="text-right font-bold">Total Pagado: ${formatCurrency(totalPayments)}</div>
+
+                    <div class="mt-6 p-3 bg-yellow-100 rounded-lg text-right">
+                        <p class="text-sm">Saldo Pendiente</p>
+                        <p class="text-xl font-bold text-yellow-800">${formatCurrency(balance)}</p>
+                    </div>
+                `;
+                document.body.appendChild(exportContainer);
+
+                html2canvas(document.getElementById('export-node')).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `deuda-${debtor.name.toLowerCase().replace(' ','-')}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    document.body.removeChild(exportContainer);
+                });
+            }
+
+            myDebtForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const paymentAmount = parseFloat(document.getElementById('monthly-payment').value);
+                const newDebt = {
+                    id: Date.now().toString(),
+                    name: document.getElementById('creditor-name').value,
+                    amount: parseFloat(document.getElementById('my-debt-amount').value),
+                    payment: paymentAmount || null
+                };
+                state.myDebts.push(newDebt);
+
+                if (paymentAmount > 0 && state.accounts.length > 0) {
+                     state.transactions.push({
+                        id: Date.now().toString() + '-debt',
+                        description: `Pago deuda: ${newDebt.name}`,
+                        amount: paymentAmount,
+                        date: new Date().toISOString().split('T')[0],
+                        type: 'expense',
+                        accountId: state.accounts[0].id,
+                        frequency: 'monthly',
+                    });
+                }
+                saveAndRender();
+                myDebtForm.reset();
+            });
+
+            myDebtsList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-my-debt')) {
+                    state.myDebts = state.myDebts.filter(d => d.id !== e.target.dataset.id);
+                    saveAndRender();
+                }
+            });
+
+            // --- Lógica de Inversiones (sin cambios) ---
+            function renderInvestments() {
+                investmentList.innerHTML = state.investments.map(inv => {
+                    const account = state.accounts.find(a => a.id === inv.accountId);
+                    return `
+                        <div class="flex justify-between items-center p-4 border-b bg-purple-50 rounded-lg mb-2">
+                            <div>
+                                <p class="font-semibold">${inv.name}</p>
+                                <p class="text-sm text-purple-800">Monto: ${formatCurrency(inv.amount)}</p>
+                                <p class="text-xs text-gray-500">Rentabilidad: ${inv.yield}% EA en ${account ? account.name : 'N/A'}</p>
+                            </div>
+                            <button data-id="${inv.id}" class="delete-investment text-gray-500 hover:text-gray-700 text-xs">LIQUIDAR</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+            investmentForm.addEventListener('submit', e => {
+                e.preventDefault();
+                state.investments.push({
+                    id: Date.now().toString(),
+                    name: document.getElementById('investment-name').value,
+                    amount: parseFloat(document.getElementById('investment-amount').value),
+                    yield: parseFloat(document.getElementById('investment-yield').value),
+                    accountId: document.getElementById('investment-account').value
+                });
+                saveAndRender();
+                investmentForm.reset();
+            });
+            investmentList.addEventListener('click', e => {
+                if (e.target.classList.contains('delete-investment')) {
+                    state.investments = state.investments.filter(inv => inv.id !== e.target.dataset.id);
+                    saveAndRender();
+                }
+            });
+
+            // --- Cálculos y Actualización del Dashboard ---
+            function calculateAccountBalance(accountId) {
+                const account = state.accounts.find(a => a.id === accountId);
+                if (!account) return 0;
+                return state.transactions.reduce((bal, t) => {
+                    if (t.accountId === accountId) {
+                        return t.type === 'income' ? bal + t.amount : bal - t.amount;
+                    }
+                    return bal;
+                }, account.initialBalance);
+            }
+
+            function updateDashboard() {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+
+                const monthlyIncome = state.transactions.reduce((sum, t) => {
+                    const tDate = new Date(t.date);
+                    if (t.type === 'income' && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) return sum + t.amount;
+                    return sum;
+                }, 0);
+                const monthlyExpenses = state.transactions.reduce((sum, t) => {
+                    const tDate = new Date(t.date);
+                    if (t.type === 'expense' && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) return sum + t.amount;
+                    return sum;
+                }, 0);
+                
+                const totalAccountBalances = state.accounts.reduce((sum, acc) => sum + calculateAccountBalance(acc.id), 0);
+                const totalInvestments = state.investments.reduce((sum, inv) => sum + inv.amount, 0);
+                const currentCapital = totalAccountBalances + totalInvestments;
+                
+                const totalDebtsToCollect = state.debtsToCollect.reduce((sum, d) => sum + calculateDebtBalance(d), 0);
+
+                document.getElementById('current-capital').textContent = formatCurrency(currentCapital);
+                document.getElementById('monthly-income').textContent = formatCurrency(monthlyIncome);
+                document.getElementById('monthly-expenses').textContent = formatCurrency(monthlyExpenses);
+                document.getElementById('debts-to-collect').textContent = formatCurrency(totalDebtsToCollect);
+            }
+
+            // --- Función principal para renderizar todo ---
+            function saveAndRender() {
+                saveState();
+                renderAccounts();
+                renderTransactions();
+                renderDebts();
+                renderInvestments();
+                updateDashboard();
+            }
+
+            // --- Inicialización ---
+            loadState();
+            document.getElementById('date').valueAsDate = new Date();
+            saveAndRender();
+        });
+    </script>
+</body>
+</html>

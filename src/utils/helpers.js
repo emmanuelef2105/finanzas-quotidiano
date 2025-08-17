@@ -1,11 +1,12 @@
 // Formatear moneda en pesos colombianos
 export const formatCurrency = (amount) => {
+  const numAmount = parseFloat(amount) || 0;
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount || 0);
+  }).format(numAmount);
 };
 
 // Formatear fecha en formato local colombiano
@@ -33,7 +34,8 @@ export const getCurrentDate = () => {
 
 // Formatear porcentaje
 export const formatPercentage = (value) => {
-  return `${(value || 0).toFixed(2)}%`;
+  const numValue = parseFloat(value) || 0;
+  return `${numValue.toFixed(2)}%`;
 };
 
 // Calcular diferencia en días entre dos fechas

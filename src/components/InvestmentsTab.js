@@ -65,6 +65,7 @@ const InvestmentsTab = () => {
         ...formData,
         amount: parseFloat(formData.amount),
         expectedYield: parseFloat(formData.expectedYield) || 0,
+        maturityDate: formData.maturityDate || null, // Enviar null si está vacío
       };
 
       await investmentsAPI.create(investmentData);

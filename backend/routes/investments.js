@@ -34,23 +34,28 @@ router.post('/', async (req, res) => {
     } = req.body;
     
     try {
+        // Usar user_id por defecto (1) y manejar fechas vacías
+        const userId = 1; // Usuario por defecto
+        const cleanMaturityDate = maturityDate && maturityDate.trim() !== '' ? maturityDate : null;
+        
         const result = await db.query(`
             INSERT INTO investments (
-                account_id, name, amount, expected_yield, 
+                user_id, account_id, name, amount, expected_yield, 
                 investment_type, start_date, maturity_date, notes
             ) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
             RETURNING *
-        `, [accountId, name, amount, expectedYield, investmentType, startDate, maturityDate, notes]);
+        `, [userId, accountId, name, amount, expectedYield, investmentType, startDate, cleanMaturityDate, notes]);
         
         // Registrar transacción de inversión (salida de dinero)
         await db.query(`
             INSERT INTO transactions (
-                account_id, description, amount, transaction_type, 
+                user_id, account_id, description, amount, transaction_type, 
                 transaction_date, notes
             ) 
-            VALUES ($1, $2, $3, 'expense', $4, $5)
+            VALUES ($1, $2, $3, $4, 'expense', $5, $6)
         `, [
+            userId,
             accountId, 
             `Inversión: ${name}`, 
             amount,

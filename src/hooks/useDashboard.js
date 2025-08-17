@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { dashboardAPI } from '../services/financeAPI';
 
-export const useDashboard = () => {
+export const useDashboard = (dateRange = null) => {
   const [summary, setSummary] = useState({
     currentCapital: 0,
     monthlyIncome: 0,
@@ -19,7 +19,7 @@ export const useDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -31,9 +31,9 @@ export const useDashboard = () => {
         evolutionRes,
         alertsRes,
       ] = await Promise.all([
-        dashboardAPI.getSummary(),
-        dashboardAPI.getRecentTransactions(10),
-        dashboardAPI.getCategoryStats(),
+        dashboardAPI.getSummary(dateRange),
+        dashboardAPI.getRecentTransactions(10, dateRange),
+        dashboardAPI.getCategoryStats(dateRange),
         dashboardAPI.getMonthlyEvolution(),
         dashboardAPI.getAlerts(),
       ]);
@@ -49,11 +49,11 @@ export const useDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
 
   const refreshDashboard = () => {
     fetchDashboardData();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   CurrencyDollarIcon, 
   ArrowTrendingUpIcon, 
@@ -7,50 +7,89 @@ import {
 } from '@heroicons/react/24/outline';
 import { useDashboard } from '../hooks/useDashboard';
 import { formatCurrency } from '../utils/helpers';
+import DateRangeFilter from './DateRangeFilter';
 
 const Dashboard = () => {
-  const { summary, loading, error } = useDashboard();
+  const [dateRange, setDateRange] = useState(null);
+  const { summary, loading, error } = useDashboard(dateRange);
+
+  const handleDateRangeChange = (newDateRange) => {
+    setDateRange(newDateRange);
+  };
 
   if (loading) {
     return (
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white p-6 rounded-xl shadow-md animate-pulse">
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-300 rounded w-24"></div>
-                <div className="h-8 bg-gray-300 rounded w-32"></div>
+      <>
+        <DateRangeFilter 
+          onDateRangeChange={handleDateRangeChange}
+          dateRange={dateRange}
+        />
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white p-6 rounded-xl shadow-md animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-300 rounded w-24"></div>
+                  <div className="h-8 bg-gray-300 rounded w-32"></div>
+                </div>
+                <div className="bg-gray-200 p-3 rounded-full w-12 h-12"></div>
               </div>
-              <div className="bg-gray-200 p-3 rounded-full w-12 h-12"></div>
             </div>
-          </div>
-        ))}
-      </section>
+          ))}
+        </section>
+      </>
     );
   }
 
   if (error) {
     return (
-      <section className="mb-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Error al cargar el dashboard
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
+      <>
+        <DateRangeFilter 
+          onDateRangeChange={handleDateRangeChange}
+          dateRange={dateRange}
+        />
+        <section className="mb-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error al cargar el dashboard
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{error}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 
+  const getCardTitle = (baseTitle) => {
+    if (!dateRange) return baseTitle;
+    
+    if (typeof dateRange === 'string') {
+      const titleMap = {
+        'current_month': baseTitle.replace('del Mes', 'del Mes Actual'),
+        'last_month': baseTitle.replace('del Mes', 'del Mes Pasado'),
+        'last_3_months': baseTitle.replace('del Mes', 'de los Últimos 3 Meses'),
+        'current_year': baseTitle.replace('del Mes', 'del Año Actual'),
+        'last_year': baseTitle.replace('del Mes', 'del Año Pasado'),
+      };
+      return titleMap[dateRange] || baseTitle.replace('del Mes', 'del Período');
+    }
+    
+    if (dateRange.type === 'custom') {
+      return baseTitle.replace('del Mes', 'del Período');
+    }
+    
+    return baseTitle;
+  };
+
   const dashboardCards = [
     {
-      title: 'Capital Actual',
+      title: getCardTitle('Capital Actual'),
       value: summary.currentCapital,
       icon: CurrencyDollarIcon,
       color: 'green',
@@ -58,7 +97,7 @@ const Dashboard = () => {
       textColor: 'text-green-600',
     },
     {
-      title: 'Ingresos del Mes',
+      title: getCardTitle('Ingresos del Mes'),
       value: summary.monthlyIncome,
       icon: ArrowTrendingUpIcon,
       color: 'blue',
@@ -66,7 +105,7 @@ const Dashboard = () => {
       textColor: 'text-blue-600',
     },
     {
-      title: 'Gastos del Mes',
+      title: getCardTitle('Gastos del Mes'),
       value: summary.monthlyExpenses,
       icon: ArrowTrendingDownIcon,
       color: 'red',
@@ -84,7 +123,12 @@ const Dashboard = () => {
   ];
 
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <>
+      <DateRangeFilter 
+        onDateRangeChange={handleDateRangeChange}
+        dateRange={dateRange}
+      />
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {dashboardCards.map((card) => {
         const IconComponent = card.icon;
         return (
@@ -130,7 +174,8 @@ const Dashboard = () => {
           </div>
         );
       })}
-    </section>
+      </section>
+    </>
   );
 };
 

@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { getDateRangeFilter } = require('../utils/dateHelper');
 
 // Obtener resumen general del dashboard
 router.get('/summary', async (req, res) => {
     try {
+        const { dateRange } = req.query;
+        const dateFilter = getDateRangeFilter(dateRange);
+        
         // Capital actual (suma de balances de cuentas + inversiones activas)
         const capitalQuery = await db.query(`
             SELECT 
@@ -15,20 +19,34 @@ router.get('/summary', async (req, res) => {
         
         const currentCapital = parseFloat(capitalQuery.rows[0].total_accounts) + parseFloat(capitalQuery.rows[0].total_investments);
         
-        // Ingresos y gastos del mes actual
-        const currentMonth = new Date().getMonth() + 1;
-        const currentYear = new Date().getFullYear();
-        
-        const monthlyQuery = await db.query(`
+        // Construir consulta para transacciones con filtro de fecha
+        let transactionQuery = `
             SELECT 
                 transaction_type,
                 COALESCE(SUM(amount), 0) as total
             FROM transactions 
-            WHERE 
-                EXTRACT(MONTH FROM transaction_date) = $1 
-                AND EXTRACT(YEAR FROM transaction_date) = $2
-            GROUP BY transaction_type
-        `, [currentMonth, currentYear]);
+            WHERE 1=1
+        `;
+        
+        let queryParams = [];
+        
+        if (dateFilter.whereClause) {
+            // Reemplazar placeholders y agregar filtro de fecha
+            let paramIndex = 1;
+            const whereClause = dateFilter.whereClause.replace(/\$\?/g, () => `$${paramIndex++}`);
+            transactionQuery += ` ${whereClause}`;
+            queryParams = [...dateFilter.params];
+        } else {
+            // Si no hay filtro de fecha, usar mes actual como antes
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
+            transactionQuery += ` AND EXTRACT(MONTH FROM transaction_date) = $1 AND EXTRACT(YEAR FROM transaction_date) = $2`;
+            queryParams = [currentMonth, currentYear];
+        }
+        
+        transactionQuery += ` GROUP BY transaction_type`;
+        
+        const monthlyQuery = await db.query(transactionQuery, queryParams);
         
         let monthlyIncome = 0;
         let monthlyExpenses = 0;
@@ -78,19 +96,34 @@ router.get('/summary', async (req, res) => {
 
 // Obtener transacciones recientes
 router.get('/recent-transactions', async (req, res) => {
-    const limit = req.query.limit || 10;
+    const { limit = 10, dateRange } = req.query;
     
     try {
-        const result = await db.query(`
+        const dateFilter = getDateRangeFilter(dateRange);
+        
+        let query = `
             SELECT 
                 t.id, t.description, t.amount, t.transaction_type, 
                 t.transaction_date, a.name as account_name, c.name as category_name
             FROM transactions t
             LEFT JOIN accounts a ON t.account_id = a.id
             LEFT JOIN categories c ON t.category_id = c.id
-            ORDER BY t.transaction_date DESC, t.created_at DESC
-            LIMIT $1
-        `, [limit]);
+            WHERE 1=1
+        `;
+        
+        let queryParams = [];
+        
+        if (dateFilter.whereClause) {
+            let paramIndex = 1;
+            const whereClause = dateFilter.whereClause.replace(/\$\?/g, () => `$${paramIndex++}`);
+            query += ` ${whereClause}`;
+            queryParams = [...dateFilter.params];
+        }
+        
+        query += ` ORDER BY t.transaction_date DESC, t.created_at DESC LIMIT $${queryParams.length + 1}`;
+        queryParams.push(limit);
+        
+        const result = await db.query(query, queryParams);
         
         res.json(result.rows);
     } catch (error) {
@@ -99,13 +132,14 @@ router.get('/recent-transactions', async (req, res) => {
     }
 });
 
-// Obtener estadísticas por categorías (mes actual)
+// Obtener estadísticas por categorías
 router.get('/category-stats', async (req, res) => {
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
+    const { dateRange } = req.query;
     
     try {
-        const result = await db.query(`
+        const dateFilter = getDateRangeFilter(dateRange);
+        
+        let query = `
             SELECT 
                 c.name as category_name,
                 c.color as category_color,
@@ -114,12 +148,27 @@ router.get('/category-stats', async (req, res) => {
                 COUNT(t.id) as transaction_count
             FROM transactions t
             LEFT JOIN categories c ON t.category_id = c.id
-            WHERE 
-                EXTRACT(MONTH FROM t.transaction_date) = $1 
-                AND EXTRACT(YEAR FROM t.transaction_date) = $2
-            GROUP BY c.id, c.name, c.color, t.transaction_type
-            ORDER BY total DESC
-        `, [currentMonth, currentYear]);
+            WHERE 1=1
+        `;
+        
+        let queryParams = [];
+        
+        if (dateFilter.whereClause) {
+            let paramIndex = 1;
+            const whereClause = dateFilter.whereClause.replace(/\$\?/g, () => `$${paramIndex++}`);
+            query += ` ${whereClause}`;
+            queryParams = [...dateFilter.params];
+        } else {
+            // Si no hay filtro de fecha, usar mes actual como antes
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
+            query += ` AND EXTRACT(MONTH FROM t.transaction_date) = $1 AND EXTRACT(YEAR FROM t.transaction_date) = $2`;
+            queryParams = [currentMonth, currentYear];
+        }
+        
+        query += ` GROUP BY c.id, c.name, c.color, t.transaction_type ORDER BY total DESC`;
+        
+        const result = await db.query(query, queryParams);
         
         const expenses = result.rows.filter(row => row.transaction_type === 'expense');
         const income = result.rows.filter(row => row.transaction_type === 'income');

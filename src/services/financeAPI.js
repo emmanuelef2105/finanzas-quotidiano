@@ -49,10 +49,21 @@ export const investmentsAPI = {
 
 // ========== DASHBOARD ==========
 export const dashboardAPI = {
-  getSummary: () => api.get('/dashboard/summary'),
-  getRecentTransactions: (limit = 10) => 
-    api.get('/dashboard/recent-transactions', { params: { limit } }),
-  getCategoryStats: () => api.get('/dashboard/category-stats'),
+  getSummary: (dateRange = null) => {
+    const params = dateRange ? { dateRange: JSON.stringify(dateRange) } : {};
+    return api.get('/dashboard/summary', { params });
+  },
+  getRecentTransactions: (limit = 10, dateRange = null) => {
+    const params = { limit };
+    if (dateRange) {
+      params.dateRange = JSON.stringify(dateRange);
+    }
+    return api.get('/dashboard/recent-transactions', { params });
+  },
+  getCategoryStats: (dateRange = null) => {
+    const params = dateRange ? { dateRange: JSON.stringify(dateRange) } : {};
+    return api.get('/dashboard/category-stats', { params });
+  },
   getMonthlyEvolution: () => api.get('/dashboard/monthly-evolution'),
   getUpcomingDebts: (days = 30) => 
     api.get('/dashboard/upcoming-debts', { params: { days } }),

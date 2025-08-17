@@ -21,6 +21,9 @@ RUN npm install --only=production && npm cache clean --force
 # Copiar el resto de la aplicación
 COPY . .
 
+# Asegurarse de que el directorio migrations existe y se copia
+COPY migrations/ ./migrations/
+
 # Crear usuario no-root
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001

@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const fs = require('fs').promises;
+const path = require('path');
 // const rateLimit = require('express-rate-limit'); // Deshabilitado para desarrollo
 require('dotenv').config();
 
@@ -17,6 +19,63 @@ async function testDatabaseConnection() {
     } catch (error) {
         console.error('❌ Error al conectar con la base de datos:', error);
         process.exit(1);
+    }
+}
+
+async function runMigrations() {
+    try {
+        const fs = require('fs').promises;
+        const path = require('path');
+        
+        // Crear tabla de migraciones si no existe
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS migrations (
+                id SERIAL PRIMARY KEY,
+                filename VARCHAR(255) UNIQUE NOT NULL,
+                executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Obtener migraciones ya ejecutadas
+        const executedResult = await db.query('SELECT filename FROM migrations');
+        const executedMigrations = executedResult.rows.map(row => row.filename);
+        
+        // Buscar archivos de migración
+        const migrationsDir = path.join(__dirname, 'migrations');
+        
+        try {
+            const migrationFiles = await fs.readdir(migrationsDir);
+            const sqlFiles = migrationFiles
+                .filter(file => file.endsWith('.sql'))
+                .sort(); // Ejecutar en orden alfabético
+            
+            for (const filename of sqlFiles) {
+                if (!executedMigrations.includes(filename)) {
+                    console.log(`🔄 Ejecutando migración: ${filename}`);
+                    
+                    const filePath = path.join(migrationsDir, filename);
+                    const sql = await fs.readFile(filePath, 'utf8');
+                    
+                    // Ejecutar la migración
+                    await db.query(sql);
+                    
+                    // Marcar como ejecutada
+                    await db.query(
+                        'INSERT INTO migrations (filename) VALUES ($1)',
+                        [filename]
+                    );
+                    
+                    console.log(`✅ Migración completada: ${filename}`);
+                }
+            }
+            
+            console.log('✅ Todas las migraciones completadas');
+        } catch (dirError) {
+            console.log('📁 Directorio migrations no encontrado, saltando migraciones');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error ejecutando migraciones:', error);
     }
 }
 
@@ -97,6 +156,9 @@ app.listen(PORT, async () => {
     
     // Verificar conexión a base de datos
     await testDatabaseConnection();
+    
+    // Ejecutar migraciones
+    await runMigrations();
     
     // TODO: Iniciar el programador de transacciones recurrentes después de instalar node-cron
     // const scheduler = require('./scheduler');

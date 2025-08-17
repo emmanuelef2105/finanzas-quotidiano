@@ -73,4 +73,8 @@ CREATE TRIGGER trigger_update_account_balance
     AFTER INSERT OR UPDATE OR DELETE ON transactions
     FOR EACH ROW EXECUTE FUNCTION update_account_balance();
 
-RAISE NOTICE 'Migración de current_balance completada exitosamente';
+-- Finalización
+DO $$
+BEGIN
+    RAISE NOTICE 'Migración de current_balance completada exitosamente';
+END $$;

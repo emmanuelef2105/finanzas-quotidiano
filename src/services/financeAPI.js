@@ -20,6 +20,27 @@ export const transactionsAPI = {
     api.get('/transactions/monthly-summary', { params: { year, month } }),
 };
 
+// ========== TARJETAS ==========
+export const cardsAPI = {
+  getAll: () => api.get('/cards'),
+  getByAccount: (accountId) => api.get(`/cards/by-account/${accountId}`),
+  create: (data) => api.post('/cards', data),
+  update: (id, data) => api.put(`/cards/${id}`, data),
+  delete: (id) => api.delete(`/cards/${id}`),
+  getSummary: (id) => api.get(`/cards/${id}/summary`),
+};
+
+// ========== MÉTODOS DE PAGO Y DIVISAS ==========
+export const utilsAPI = {
+  getPaymentMethods: () => api.get('/utils/payment-methods'),
+  getCurrencies: () => api.get('/utils/currencies'),
+  createPaymentMethod: (data) => api.post('/utils/payment-methods', data),
+  createCurrency: (data) => api.post('/utils/currencies', data),
+  updatePaymentMethod: (id, data) => api.put(`/utils/payment-methods/${id}`, data),
+  updateCurrency: (id, data) => api.put(`/utils/currencies/${id}`, data),
+  getExchangeRates: () => api.get('/utils/exchange-rates'),
+};
+
 // ========== DEUDAS ==========
 export const debtsAPI = {
   // Deudas por cobrar

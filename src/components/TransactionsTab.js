@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
-import { transactionsAPI } from '../services/financeAPI';
+import { transactionsAPI, utilsAPI } from '../services/financeAPI';
 import { useAccounts } from '../hooks/useAccounts';
+import { useCards } from '../hooks/useCards';
 import { formatCurrency, formatDate, getCurrentDate } from '../utils/helpers';
 
 const TransactionsTab = () => {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   
   const { accounts } = useAccounts();
+  const { cards = [] } = useCards(); // Aseguramos que cards sea un array
   
   const [formData, setFormData] = useState({
     accountId: '',
@@ -30,12 +34,20 @@ const TransactionsTab = () => {
     useCustomLogic: false,
     customLogic: '',
     notes: '',
+    paymentMethodId: '',
+    cardId: '',
+    currencyId: '',
+    exchangeRate: 1.00,
+    originalAmount: '',
+    paymentReference: '',
   });
 
   // Cargar datos iniciales
   useEffect(() => {
     fetchTransactions();
     fetchCategories();
+    fetchPaymentMethods();
+    fetchCurrencies();
   }, []);
 
   const fetchTransactions = async () => {
@@ -57,6 +69,24 @@ const TransactionsTab = () => {
       setCategories(response.data);
     } catch (err) {
       console.error('Error al cargar categorías:', err);
+    }
+  };
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const response = await utilsAPI.getPaymentMethods();
+      setPaymentMethods(response.data || []);
+    } catch (err) {
+      console.error('Error al cargar métodos de pago:', err);
+    }
+  };
+
+  const fetchCurrencies = async () => {
+    try {
+      const response = await utilsAPI.getCurrencies();
+      setCurrencies(response.data || []);
+    } catch (err) {
+      console.error('Error al cargar divisas:', err);
     }
   };
 
@@ -134,6 +164,12 @@ const TransactionsTab = () => {
       transactionDate: transaction.transaction_date?.split('T')[0] || getCurrentDate(),
       frequency: transaction.frequency || 'one-time',
       notes: transaction.notes || '',
+      paymentMethodId: transaction.payment_method_id || '',
+      cardId: transaction.card_id || '',
+      currencyId: transaction.currency_id || '',
+      exchangeRate: transaction.exchange_rate || 1.00,
+      originalAmount: transaction.original_amount || '',
+      paymentReference: transaction.payment_reference || '',
     });
     setShowForm(true);
   };
@@ -155,6 +191,12 @@ const TransactionsTab = () => {
       useCustomLogic: false,
       customLogic: '',
       notes: '',
+      paymentMethodId: '',
+      cardId: '',
+      currencyId: '',
+      exchangeRate: 1.00,
+      originalAmount: '',
+      paymentReference: '',
     });
     setEditingTransaction(null);
     setShowForm(false);
@@ -473,6 +515,161 @@ const TransactionsTab = () => {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Método de pago */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Método de pago
+                </label>
+                <select
+                  value={formData.paymentMethodId}
+                  onChange={(e) => {
+                    const selectedMethod = paymentMethods.find(pm => pm.id === parseInt(e.target.value));
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      paymentMethodId: e.target.value,
+                      cardId: selectedMethod?.requires_card ? prev.cardId : '' // Limpiar tarjeta si no la requiere
+                    }));
+                  }}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="">Seleccionar método</option>
+                  {paymentMethods.map(method => (
+                    <option key={method.id} value={method.id}>
+                      {method.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tarjeta (solo si el método de pago lo requiere) */}
+              {(() => {
+                const selectedMethod = paymentMethods.find(pm => pm.id === parseInt(formData.paymentMethodId));
+                const accountCards = Array.isArray(cards) ? cards.filter(card => 
+                  card.account_id === parseInt(formData.accountId) && card.is_active !== false
+                ) : [];
+                
+                if (selectedMethod?.requires_card) {
+                  return (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tarjeta
+                      </label>
+                      <select
+                        value={formData.cardId}
+                        onChange={(e) => setFormData(prev => ({ ...prev, cardId: e.target.value }))}
+                        required={selectedMethod?.requires_card}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      >
+                        <option value="">Seleccionar tarjeta</option>
+                        {accountCards.map(card => (
+                          <option key={card.id} value={card.id}>
+                            {card.card_name} - {card.card_type} {card.last_four_digits ? `(*${card.last_four_digits})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {accountCards.length === 0 && formData.accountId && (
+                        <p className="text-sm text-amber-600 mt-1">
+                          No hay tarjetas disponibles para esta cuenta. Puedes agregar una en la sección de Cuentas.
+                        </p>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Divisa */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Divisa
+                </label>
+                <select
+                  value={formData.currencyId}
+                  onChange={(e) => {
+                    const selectedCurrency = currencies.find(cur => cur.id === parseInt(e.target.value));
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      currencyId: e.target.value,
+                      exchangeRate: selectedCurrency?.code === 'MXN' ? 1.00 : prev.exchangeRate
+                    }));
+                  }}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="">Seleccionar divisa</option>
+                  {currencies.map(currency => (
+                    <option key={currency.id} value={currency.id}>
+                      {currency.code} - {currency.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Monto original y tipo de cambio (solo si no es MXN) */}
+              {(() => {
+                const selectedCurrency = currencies.find(cur => cur.id === parseInt(formData.currencyId));
+                if (selectedCurrency && selectedCurrency.code !== 'MXN') {
+                  return (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Monto original ({selectedCurrency.symbol})
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.originalAmount}
+                          onChange={(e) => {
+                            const originalAmount = parseFloat(e.target.value) || 0;
+                            const exchangeRate = parseFloat(formData.exchangeRate) || 1;
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              originalAmount: e.target.value,
+                              amount: (originalAmount * exchangeRate).toFixed(2)
+                            }));
+                          }}
+                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tipo de cambio
+                        </label>
+                        <input
+                          type="number"
+                          step="0.0001"
+                          value={formData.exchangeRate}
+                          onChange={(e) => {
+                            const exchangeRate = parseFloat(e.target.value) || 1;
+                            const originalAmount = parseFloat(formData.originalAmount) || 0;
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              exchangeRate: e.target.value,
+                              amount: originalAmount > 0 ? (originalAmount * exchangeRate).toFixed(2) : prev.amount
+                            }));
+                          }}
+                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Referencia de pago */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Referencia de pago <span className="text-gray-500 text-xs">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.paymentReference}
+                  onChange={(e) => setFormData(prev => ({ ...prev, paymentReference: e.target.value }))}
+                  placeholder="Número de referencia, cheque, etc."
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
               </div>
 
               {/* Notas */}

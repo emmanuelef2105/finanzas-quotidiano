@@ -5,10 +5,24 @@
 module.exports = {
     // Obtener transacciones con paginación
     GET_TRANSACTIONS_WITH_PAGINATION: `
-        SELECT t.*, a.name as account_name, c.name as category_name, c.color as category_color
+        SELECT 
+            t.*, 
+            a.name as account_name, 
+            c.name as category_name, 
+            c.color as category_color,
+            pm.name as payment_method_name,
+            pm.requires_card,
+            cr.name as card_name,
+            cr.card_type,
+            cr.last_four_digits,
+            cur.code as currency_code,
+            cur.symbol as currency_symbol
         FROM transactions t
         LEFT JOIN accounts a ON t.account_id = a.id
         LEFT JOIN categories c ON t.category_id = c.id
+        LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+        LEFT JOIN cards cr ON t.card_id = cr.id
+        LEFT JOIN currencies cur ON t.currency_id = cur.id
         WHERE ($1::text IS NULL OR t.account_id = $1::int)
         AND ($2::text IS NULL OR c.type = $2)
         AND ($3::date IS NULL OR t.transaction_date >= $3)
@@ -39,17 +53,32 @@ module.exports = {
     CREATE_TRANSACTION: `
         INSERT INTO transactions (
             account_id, category_id, amount, transaction_type, description, 
-            transaction_date, notes, recurring_series_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            transaction_date, notes, recurring_series_id, payment_method_id, 
+            card_id, currency_id, exchange_rate, original_amount, payment_reference
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *
     `,
 
     // Obtener transacción por ID con detalles
     GET_TRANSACTION_BY_ID: `
-        SELECT t.*, a.name as account_name, c.name as category_name, c.color as category_color
+        SELECT 
+            t.*, 
+            a.name as account_name, 
+            c.name as category_name, 
+            c.color as category_color,
+            pm.name as payment_method_name,
+            pm.requires_card,
+            cr.name as card_name,
+            cr.card_type,
+            cr.last_four_digits,
+            cur.code as currency_code,
+            cur.symbol as currency_symbol
         FROM transactions t
         LEFT JOIN accounts a ON t.account_id = a.id
         LEFT JOIN categories c ON t.category_id = c.id
+        LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+        LEFT JOIN cards cr ON t.card_id = cr.id
+        LEFT JOIN currencies cur ON t.currency_id = cur.id
         WHERE t.id = $1
     `,
 
@@ -59,8 +88,10 @@ module.exports = {
         SET account_id = $1, category_id = $2, amount = $3, 
             transaction_type = $4, description = $5, 
             transaction_date = $6, notes = $7,
+            payment_method_id = $8, card_id = $9, currency_id = $10,
+            exchange_rate = $11, original_amount = $12, payment_reference = $13,
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = $8
+        WHERE id = $14
         RETURNING *
     `,
 

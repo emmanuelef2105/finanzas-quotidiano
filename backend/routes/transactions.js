@@ -9,10 +9,24 @@ router.get('/', async (req, res) => {
     
     try {
         let query = `
-            SELECT t.*, a.name as account_name, c.name as category_name, c.color as category_color
+            SELECT 
+                t.*, 
+                a.name as account_name, 
+                c.name as category_name, 
+                c.color as category_color,
+                pm.name as payment_method_name,
+                pm.requires_card,
+                cr.card_name as card_name,
+                cr.card_type,
+                cr.last_four_digits,
+                cur.code as currency_code,
+                cur.symbol as currency_symbol
             FROM transactions t
             LEFT JOIN accounts a ON t.account_id = a.id
             LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+            LEFT JOIN cards cr ON t.card_id = cr.id
+            LEFT JOIN currencies cur ON t.currency_id = cur.id
             WHERE 1=1
         `;
         const queryParams = [];
@@ -66,7 +80,7 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         console.error('Error al obtener transacciones:', error);
-        res.status(500).json({ error: 'Error al obtener transacciones' });
+        res.status(500).json({ error: 'Error al obtener transacciones', details: error.message });
     }
 });
 
@@ -80,25 +94,56 @@ router.post('/', async (req, res) => {
         transactionType, 
         transactionDate, 
         frequency = 'one-time',
-        notes 
+        notes,
+        paymentMethodId,
+        cardId,
+        currencyId,
+        exchangeRate = 1.00,
+        originalAmount,
+        paymentReference
     } = req.body;
     
     try {
+        // Calcular el amount final si hay tipo de cambio diferente
+        const finalAmount = originalAmount && exchangeRate !== 1 ? 
+            (originalAmount * exchangeRate) : amount;
+        
         const result = await db.query(`
             INSERT INTO transactions (
                 account_id, category_id, description, amount, 
-                transaction_type, transaction_date, frequency, notes
+                transaction_type, transaction_date, frequency, notes,
+                payment_method_id, card_id, currency_id, exchange_rate,
+                original_amount, payment_reference
             ) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
             RETURNING *
-        `, [accountId, categoryId, description, amount, transactionType, transactionDate, frequency, notes]);
+        `, [
+            accountId, categoryId, description, finalAmount, 
+            transactionType, transactionDate, frequency, notes,
+            paymentMethodId || null, cardId || null, currencyId || null, exchangeRate,
+            originalAmount || null, paymentReference || null
+        ]);
         
         // Obtener la transacción con información adicional
         const fullTransaction = await db.query(`
-            SELECT t.*, a.name as account_name, c.name as category_name, c.color as category_color
+            SELECT 
+                t.*, 
+                a.name as account_name, 
+                c.name as category_name, 
+                c.color as category_color,
+                pm.name as payment_method_name,
+                pm.requires_card,
+                cr.name as card_name,
+                cr.card_type,
+                cr.last_four_digits,
+                cur.code as currency_code,
+                cur.symbol as currency_symbol
             FROM transactions t
             LEFT JOIN accounts a ON t.account_id = a.id
             LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+            LEFT JOIN cards cr ON t.card_id = cr.id
+            LEFT JOIN currencies cur ON t.currency_id = cur.id
             WHERE t.id = $1
         `, [result.rows[0].id]);
         
@@ -146,10 +191,24 @@ router.put('/:id', async (req, res) => {
         
         // Obtener la transacción actualizada con información adicional
         const fullTransaction = await db.query(`
-            SELECT t.*, a.name as account_name, c.name as category_name, c.color as category_color
+            SELECT 
+                t.*, 
+                a.name as account_name, 
+                c.name as category_name, 
+                c.color as category_color,
+                pm.name as payment_method_name,
+                pm.requires_card,
+                cr.card_name as card_name,
+                cr.card_type,
+                cr.last_four_digits,
+                cur.code as currency_code,
+                cur.symbol as currency_symbol
             FROM transactions t
             LEFT JOIN accounts a ON t.account_id = a.id
             LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+            LEFT JOIN cards cr ON t.card_id = cr.id
+            LEFT JOIN currencies cur ON t.currency_id = cur.id
             WHERE t.id = $1
         `, [id]);
         

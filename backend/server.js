@@ -118,6 +118,8 @@ const debtRoutes = require('./routes/debts');
 const investmentRoutes = require('./routes/investments');
 const dashboardRoutes = require('./routes/dashboard');
 const recurringRoutes = require('./routes/recurring');
+const cardRoutes = require('./routes/cards');
+const utilRoutes = require('./routes/utils');
 
 // Usar rutas
 app.use('/api/accounts', accountRoutes);
@@ -126,6 +128,8 @@ app.use('/api/debts', debtRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/recurring', recurringRoutes);
+app.use('/api/cards', cardRoutes);
+app.use('/api/utils', utilRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

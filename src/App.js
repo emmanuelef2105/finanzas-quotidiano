@@ -4,6 +4,7 @@ import TransactionsTab from './components/TransactionsTab';
 import DebtsTab from './components/DebtsTab';
 import InvestmentsTab from './components/InvestmentsTab';
 import AccountsTab from './components/AccountsTab';
+import CardsTab from './components/CardsTab';
 import ConfigurationTab from './components/ConfigurationTab';
 
 const App = () => {
@@ -14,6 +15,7 @@ const App = () => {
     { id: 'debts', label: 'Deudas y Préstamos', component: DebtsTab },
     { id: 'investments', label: 'Inversiones', component: InvestmentsTab },
     { id: 'accounts', label: 'Cuentas', component: AccountsTab },
+    { id: 'cards', label: 'Tarjetas', component: CardsTab },
     { id: 'configuration', label: 'Configuración', component: ConfigurationTab },
   ];
 
